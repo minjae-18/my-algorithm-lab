@@ -2,8 +2,6 @@
 #include <stdlib.h>
 #include <time.h>
 
-#define DATA_SIZE 50000 // 성능 차이를 명확히 보기 위한 데이터 크기
-
 // 위치 변경 유틸리티 함수
 void swap(int* a, int* b) {
     int temp = *a;
@@ -51,7 +49,7 @@ void quick_sort(int arr[], int low, int high) {
 }
 
 // ---------------------------------------------------
-// 3. 배우지 않은 정렬: 힙 정렬 (Heap Sort)
+// 3. 배우지 않은 정렬: 힙 정렬 (Heap Sort) - [AI 학습]
 // ---------------------------------------------------
 void heapify(int arr[], int n, int i) {
     int largest = i;
@@ -79,51 +77,71 @@ void heap_sort(int arr[], int n) {
 }
 
 // ---------------------------------------------------
-// 배열 복사 및 테스트 실행
+// 배열 복사 유틸리티 함수
 // ---------------------------------------------------
 void copy_array(int src[], int dest[], int n) {
     for (int i = 0; i < n; i++) dest[i] = src[i];
 }
 
+// ---------------------------------------------------
+// 메인 함수: 성능 측정 로직
+// ---------------------------------------------------
 int main() {
-    int *original = (int*)malloc(sizeof(int) * DATA_SIZE);
-    int *test_arr = (int*)malloc(sizeof(int) * DATA_SIZE);
-    clock_t start, end;
-    double time_taken;
+    // 보고서 내용과 일치하도록 3가지 데이터 크기로 연속 테스트 진행
+    int sizes[] = {10000, 50000, 100000};
+    int num_sizes = 3;
 
-    // 난수 생성 시드 초기화 및 배열 생성
+    printf("=======================================================================\n");
+    printf("%-15s | %-15s | %-15s | %-15s\n", "데이터 크기(N)", "삽입 정렬(초)", "퀵 정렬(초)", "힙 정렬(초)");
+    printf("=======================================================================\n");
+
+    // 난수 생성 시드 초기화
     srand(time(NULL));
-    for (int i = 0; i < DATA_SIZE; i++) {
-        original[i] = rand() % 100000;
+
+    for (int s = 0; s < num_sizes; s++) {
+        int current_size = sizes[s];
+        
+        // [중요] 스택 메모리 초과 방지를 위한 동적 할당 (malloc 사용)
+        int *original = (int*)malloc(sizeof(int) * current_size);
+        int *test_arr = (int*)malloc(sizeof(int) * current_size);
+        
+        // 데이터 크기만큼 난수 배열 생성
+        for (int i = 0; i < current_size; i++) {
+            original[i] = rand() % 100000;
+        }
+
+        clock_t start, end;
+        double time_insertion, time_quick, time_heap;
+
+        // --- 1. 삽입 정렬 측정 ---
+        copy_array(original, test_arr, current_size);
+        start = clock();
+        insertion_sort(test_arr, current_size);
+        end = clock();
+        time_insertion = ((double)(end - start)) / CLOCKS_PER_SEC;
+
+        // --- 2. 퀵 정렬 측정 ---
+        copy_array(original, test_arr, current_size);
+        start = clock();
+        quick_sort(test_arr, 0, current_size - 1);
+        end = clock();
+        time_quick = ((double)(end - start)) / CLOCKS_PER_SEC;
+
+        // --- 3. 힙 정렬 측정 ---
+        copy_array(original, test_arr, current_size);
+        start = clock();
+        heap_sort(test_arr, current_size);
+        end = clock();
+        time_heap = ((double)(end - start)) / CLOCKS_PER_SEC;
+
+        // 측정 결과 표 형식으로 출력
+        printf("%-15d | %-15.5f | %-15.5f | %-15.5f\n", current_size, time_insertion, time_quick, time_heap);
+
+        // 사용 완료된 메모리 해제
+        free(original);
+        free(test_arr);
     }
+    printf("=======================================================================\n");
 
-    printf("[ 데이터 크기: %d 개 ]\n\n", DATA_SIZE);
-
-    // 1. 삽입 정렬 테스트
-    copy_array(original, test_arr, DATA_SIZE);
-    start = clock();
-    insertion_sort(test_arr, DATA_SIZE);
-    end = clock();
-    time_taken = ((double)(end - start)) / CLOCKS_PER_SEC;
-    printf("1. 삽입 정렬 (Insertion Sort) 소요 시간: %f 초\n", time_taken);
-
-    // 2. 퀵 정렬 테스트
-    copy_array(original, test_arr, DATA_SIZE);
-    start = clock();
-    quick_sort(test_arr, 0, DATA_SIZE - 1);
-    end = clock();
-    time_taken = ((double)(end - start)) / CLOCKS_PER_SEC;
-    printf("2. 퀵 정렬 (Quick Sort) 소요 시간:      %f 초\n", time_taken);
-
-    // 3. 힙 정렬 테스트
-    copy_array(original, test_arr, DATA_SIZE);
-    start = clock();
-    heap_sort(test_arr, DATA_SIZE);
-    end = clock();
-    time_taken = ((double)(end - start)) / CLOCKS_PER_SEC;
-    printf("3. 힙 정렬 (Heap Sort) 소요 시간:       %f 초\n", time_taken);
-
-    free(original);
-    free(test_arr);
     return 0;
 }
